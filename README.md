@@ -94,14 +94,15 @@ a Render restart or redeploy clears any in-progress rooms.
 3. Before starting, the host can set the round length (1-30 minutes, default 8) and the number
    of spies (default 1, capped so spies always stay a strict minority of the table). Spies do
    not know who the other spies are.
-4. The host starts the round. The server picks that many random Spies and one random location.
-5. Every non-Spy player sees the location; each Spy sees nothing. The timer starts, and
-   everyone can see how many spies are in play (but not who they are).
+4. The host starts the round. The server picks that many random Spies and one random secret word.
+5. Every non-Spy player sees the secret word; each Spy sees nothing (not even a hint about what
+   category it's from). The timer starts, and everyone can see how many spies are in play (but
+   not who they are).
 6. Any player can call a vote at any time. Before the actual vote happens, everyone else gets
    to Agree or Disagree — a majority must agree or the call is cancelled and play resumes on
    the clock. The caller can also cancel their own call at any time before it resolves.
 7. Once a vote is approved, everyone votes on who they think is a Spy:
-   - If they picked a Spy, that Spy gets one last chance to guess the location. A correct
+   - If they picked a Spy, that Spy gets one last chance to guess the secret word. A correct
      guess wins it for the Spies; a wrong guess reveals that Spy and, if any spies remain
      hidden, the round continues on the same clock. If that was the last Spy, the other
      players win.
@@ -110,7 +111,7 @@ a Render restart or redeploy clears any in-progress rooms.
      continues.
 8. If time runs out with any Spy still uncaught, the Spies win.
 9. The host can end the round early at any time with "Cancel round" — this reveals the Spies
-   and the location without declaring a winner.
+   and the secret word without declaring a winner.
 10. The host can start a new round with the same group from the results screen.
 
 ## Notes on the current implementation

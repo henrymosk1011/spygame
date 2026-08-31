@@ -25,12 +25,12 @@ export default function RoleRevealScreen({ role, location, onReady }) {
         <div className="space-y-4">
           <p className="text-2xl font-bold text-red-400">You are the Spy</p>
           <p className="max-w-xs text-slate-400">
-            You don't know the location. Listen closely and try to blend in.
+            You don't know the secret word. Listen closely and try to blend in.
           </p>
         </div>
       ) : (
         <div className="space-y-4">
-          <p className="text-sm uppercase tracking-wide text-slate-400">The location is</p>
+          <p className="text-sm uppercase tracking-wide text-slate-400">The secret word is</p>
           <p className="text-4xl font-bold text-emerald-400">{location}</p>
           <p className="max-w-xs text-slate-400">
             One player at the table is the Spy. Ask questions to find them without giving this away.

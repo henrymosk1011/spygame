@@ -27,7 +27,7 @@ function RoundEndView({ roundEnd, isHost, onNewRound }) {
     <div className="space-y-6">
       <p className={`text-3xl font-bold ${headingColor}`}>{heading}</p>
       <p className="text-slate-300">
-        {joinNames(spyNames)} {wasSpy}. The location was{" "}
+        {joinNames(spyNames)} {wasSpy}. The secret word was{" "}
         <span className="font-semibold text-emerald-400">{roundEnd.location}</span>.
       </p>
       {isHost ? (
@@ -52,21 +52,21 @@ function SpyGuessView({ caughtInfo, isBeingGuessed, onSpyGuess }) {
     return (
       <p className="text-slate-300">
         {caughtInfo.accused_name} was accused of being the Spy and gets one chance to guess the
-        location...
+        secret word...
       </p>
     );
   }
 
   return (
     <div className="space-y-4">
-      <p className="text-red-400">You were caught! Guess the location for one last chance to win.</p>
+      <p className="text-red-400">You were caught! Guess the secret word for one last chance to win.</p>
       <select
         value={guess}
         onChange={(e) => setGuess(e.target.value)}
         className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-slate-100 outline-none focus:border-emerald-500"
       >
         <option value="" disabled>
-          Choose a location
+          Choose a word
         </option>
         {LOCATIONS.map((location) => (
           <option key={location} value={location}>

@@ -36,7 +36,7 @@ export default function TimerScreen({
           <p className="text-red-400">You are the Spy. Stay hidden.</p>
         ) : (
           <p className="text-slate-400">
-            Location: <span className="font-semibold text-emerald-400">{location}</span>
+            Secret word: <span className="font-semibold text-emerald-400">{location}</span>
           </p>
         )}
         {spyCount > 1 && <p className="text-sm text-slate-500">Spies this round: {spyCount}</p>}
