@@ -52,10 +52,11 @@ export default function LobbyScreen({ roomCode, players, selfId, isHost, onStart
             <label className="block">
               <span className="text-sm text-slate-400">Round length (minutes)</span>
               <input
-                type="number"
+                type="text"
                 inputMode="numeric"
+                pattern="[0-9]*"
                 value={durationText}
-                onChange={(e) => setDurationText(e.target.value)}
+                onChange={(e) => setDurationText(e.target.value.replace(/[^0-9]/g, ""))}
                 onBlur={() =>
                   setDurationText(
                     String(clamp(durationText, MIN_ROUND_MINUTES, MAX_ROUND_MINUTES, DEFAULT_ROUND_MINUTES))
@@ -70,10 +71,11 @@ export default function LobbyScreen({ roomCode, players, selfId, isHost, onStart
                 Number of spies {maxSpies === 1 ? "(max 1 with this many players)" : `(max ${maxSpies})`}
               </span>
               <input
-                type="number"
+                type="text"
                 inputMode="numeric"
+                pattern="[0-9]*"
                 value={spyCountText}
-                onChange={(e) => setSpyCountText(e.target.value)}
+                onChange={(e) => setSpyCountText(e.target.value.replace(/[^0-9]/g, ""))}
                 onBlur={() => setSpyCountText(String(clamp(spyCountText, 1, maxSpies, 1)))}
                 className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none focus:border-emerald-500"
               />

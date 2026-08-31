@@ -125,16 +125,26 @@ export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { status, sendMessage } = useWebSocket(dispatch);
 
-  // On mobile, focusing the name/room-code inputs on the join screen scrolls the page down to
-  // keep the field above the keyboard, and the keyboard's close animation keeps adjusting that
-  // scroll position for a couple hundred ms after the screen has already switched -- a single
-  // synchronous scrollTo can lose that race, so re-assert it a few times as the animation settles.
+  // On mobile, focusing a text input scrolls the page to keep it above the on-screen keyboard.
+  // That keyboard's close animation keeps resizing the visual viewport (and re-adjusting scroll)
+  // for a while after this screen has already mounted, so a one-shot scrollTo loses the race.
+  // The Visual Viewport API's resize event fires exactly when that's happening, so react to it
+  // directly instead of guessing a duration; a few timed fallbacks cover browsers without it.
   useEffect(() => {
-    window.scrollTo(0, 0);
-    const timeouts = [50, 150, 350, 600].map((delay) =>
-      setTimeout(() => window.scrollTo(0, 0), delay)
+    const resetScroll = () => window.scrollTo(0, 0);
+    resetScroll();
+
+    const timeouts = [50, 100, 150, 250, 350, 500, 750, 1000].map((delay) =>
+      setTimeout(resetScroll, delay)
     );
-    return () => timeouts.forEach(clearTimeout);
+
+    const viewport = window.visualViewport;
+    viewport?.addEventListener("resize", resetScroll);
+
+    return () => {
+      timeouts.forEach(clearTimeout);
+      viewport?.removeEventListener("resize", resetScroll);
+    };
   }, [state.screen]);
 
   const onCreateRoom = useCallback(
