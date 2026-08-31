@@ -3,6 +3,7 @@
 Message protocol (all messages are JSON objects with a "type" field):
 
 Client -> server:
+  ping              {}                (keepalive; works before joining a room too)
   create_room       {name}
   join_room         {room_code, name}
   start_round       {duration_minutes?, spy_count?}  (host only, needs >= MIN_PLAYERS)
@@ -15,6 +16,7 @@ Client -> server:
   new_round         {}                (host only, returns everyone to the lobby)
 
 Server -> client:
+  pong                   {}
   room_created           {room_code, player_id, players, is_host}
   room_joined            {room_code, player_id, players, is_host}
   error                  {message}
@@ -174,6 +176,10 @@ async def resolve_vote(room: Room) -> None:
 
 async def handle_message(room_code_holder: dict, player_id_holder: dict, websocket: WebSocket, message: dict) -> None:
     msg_type = message.get("type")
+
+    if msg_type == "ping":
+        await websocket.send_json({"type": "pong"})
+        return
 
     if msg_type == "create_room":
         name = (message.get("name") or "").strip()

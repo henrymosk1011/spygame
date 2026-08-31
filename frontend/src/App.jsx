@@ -126,10 +126,15 @@ export default function App() {
   const { status, sendMessage } = useWebSocket(dispatch);
 
   // On mobile, focusing the name/room-code inputs on the join screen scrolls the page down to
-  // keep the field above the keyboard. That scroll position otherwise persists after switching
-  // to a whole new screen, so the next screen can render starting mid-scroll.
+  // keep the field above the keyboard, and the keyboard's close animation keeps adjusting that
+  // scroll position for a couple hundred ms after the screen has already switched -- a single
+  // synchronous scrollTo can lose that race, so re-assert it a few times as the animation settles.
   useEffect(() => {
     window.scrollTo(0, 0);
+    const timeouts = [50, 150, 350, 600].map((delay) =>
+      setTimeout(() => window.scrollTo(0, 0), delay)
+    );
+    return () => timeouts.forEach(clearTimeout);
   }, [state.screen]);
 
   const onCreateRoom = useCallback(

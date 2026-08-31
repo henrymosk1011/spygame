@@ -54,8 +54,6 @@ export default function LobbyScreen({ roomCode, players, selfId, isHost, onStart
               <input
                 type="number"
                 inputMode="numeric"
-                min={MIN_ROUND_MINUTES}
-                max={MAX_ROUND_MINUTES}
                 value={durationText}
                 onChange={(e) => setDurationText(e.target.value)}
                 onBlur={() =>
@@ -74,8 +72,6 @@ export default function LobbyScreen({ roomCode, players, selfId, isHost, onStart
               <input
                 type="number"
                 inputMode="numeric"
-                min={1}
-                max={maxSpies}
                 value={spyCountText}
                 onChange={(e) => setSpyCountText(e.target.value)}
                 onBlur={() => setSpyCountText(String(clamp(spyCountText, 1, maxSpies, 1)))}
