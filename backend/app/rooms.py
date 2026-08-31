@@ -9,7 +9,7 @@ from fastapi import WebSocket
 
 ROOM_CODE_LENGTH = 4
 ROOM_CODE_ALPHABET = string.ascii_uppercase
-ROUND_DURATION_SECONDS = 8 * 60
+DEFAULT_ROUND_DURATION_SECONDS = 8 * 60
 
 
 @dataclass
@@ -26,14 +26,20 @@ class Room:
     code: str
     players: dict[str, Player] = field(default_factory=dict)
     host_id: Optional[str] = None
-    state: str = "lobby"  # lobby | role_reveal | timer | voting | round_end
-    spy_id: Optional[str] = None
+    # lobby | role_reveal | timer | vote_call_pending | voting | round_end
+    state: str = "lobby"
+    spy_ids: list[str] = field(default_factory=list)
+    caught_spy_ids: list[str] = field(default_factory=list)
+    pending_caught_spy_id: Optional[str] = None
     location: Optional[str] = None
-    round_duration: int = ROUND_DURATION_SECONDS
+    round_duration: int = DEFAULT_ROUND_DURATION_SECONDS
     round_started_at: Optional[float] = None
     votes: dict[str, str] = field(default_factory=dict)
     vote_active: bool = False
     spy_guess_pending: bool = False
+    vote_call_pending: bool = False
+    vote_call_caller_id: Optional[str] = None
+    vote_call_responses: dict[str, bool] = field(default_factory=dict)
     timer_task: Optional[asyncio.Task] = None
 
     def player_list(self) -> list[dict]:
@@ -48,12 +54,17 @@ class Room:
     def reset_for_new_round(self) -> None:
         self.cancel_timer()
         self.state = "lobby"
-        self.spy_id = None
+        self.spy_ids = []
+        self.caught_spy_ids = []
+        self.pending_caught_spy_id = None
         self.location = None
         self.round_started_at = None
         self.votes = {}
         self.vote_active = False
         self.spy_guess_pending = False
+        self.vote_call_pending = False
+        self.vote_call_caller_id = None
+        self.vote_call_responses = {}
 
     def cancel_timer(self) -> None:
         if self.timer_task is not None and not self.timer_task.done():

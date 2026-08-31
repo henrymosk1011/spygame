@@ -1,15 +1,33 @@
 import { useState } from "react";
 import { LOCATIONS } from "../locations.js";
 
+function joinNames(names) {
+  if (names.length <= 1) return names[0] ?? "";
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
+}
+
 function RoundEndView({ roundEnd, isHost, onNewRound }) {
-  const playersWon = roundEnd.winner === "players";
+  const spyNames = roundEnd.spy_names ?? [];
+  const wasSpy = spyNames.length > 1 ? "were the Spies" : "was the Spy";
+  const heading =
+    roundEnd.winner === "players"
+      ? "Players win!"
+      : roundEnd.winner === "spy"
+        ? "Spy wins!"
+        : "Round cancelled";
+  const headingColor =
+    roundEnd.winner === "players"
+      ? "text-emerald-400"
+      : roundEnd.winner === "spy"
+        ? "text-red-400"
+        : "text-slate-300";
+
   return (
     <div className="space-y-6">
-      <p className={`text-3xl font-bold ${playersWon ? "text-emerald-400" : "text-red-400"}`}>
-        {playersWon ? "Players win!" : "Spy wins!"}
-      </p>
+      <p className={`text-3xl font-bold ${headingColor}`}>{heading}</p>
       <p className="text-slate-300">
-        {roundEnd.spy_name} was the Spy. The location was{" "}
+        {joinNames(spyNames)} {wasSpy}. The location was{" "}
         <span className="font-semibold text-emerald-400">{roundEnd.location}</span>.
       </p>
       {isHost ? (
@@ -68,7 +86,7 @@ function SpyGuessView({ caughtInfo, isBeingGuessed, onSpyGuess }) {
   );
 }
 
-function ActiveVoteView({ candidates, votedIds, selfId, onCastVote }) {
+function ActiveVoteView({ candidates, votedIds, selfId, isHost, onCastVote, onCancelRound }) {
   const hasVoted = votedIds.includes(selfId);
 
   return (
@@ -94,6 +112,15 @@ function ActiveVoteView({ candidates, votedIds, selfId, onCastVote }) {
           : "Tap a name to cast your vote."}{" "}
         {votedIds.length}/{candidates.length} have voted.
       </p>
+      {isHost && (
+        <button
+          type="button"
+          onClick={onCancelRound}
+          className="text-sm text-slate-500 underline transition hover:text-slate-300"
+        >
+          Cancel round
+        </button>
+      )}
     </div>
   );
 }
@@ -108,6 +135,7 @@ export default function VotingScreen({
   onCastVote,
   onSpyGuess,
   onNewRound,
+  onCancelRound,
 }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-slate-900 px-4 text-center">
@@ -124,7 +152,9 @@ export default function VotingScreen({
           candidates={candidates}
           votedIds={votedIds}
           selfId={selfId}
+          isHost={isHost}
           onCastVote={onCastVote}
+          onCancelRound={onCancelRound}
         />
       )}
     </div>

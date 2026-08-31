@@ -4,6 +4,7 @@ import JoinScreen from "./pages/JoinScreen.jsx";
 import LobbyScreen from "./pages/LobbyScreen.jsx";
 import RoleRevealScreen from "./pages/RoleRevealScreen.jsx";
 import TimerScreen from "./pages/TimerScreen.jsx";
+import VoteCallScreen from "./pages/VoteCallScreen.jsx";
 import VotingScreen from "./pages/VotingScreen.jsx";
 
 const initialState = {
@@ -15,6 +16,9 @@ const initialState = {
   role: null,
   location: null,
   timer: null,
+  spyCount: 1,
+  lastSpyReveal: null,
+  voteCall: null,
   vote: { candidates: [], votedIds: [] },
   caughtInfo: null,
   roundEnd: null,
@@ -41,6 +45,8 @@ function reducer(state, message) {
         role: null,
         location: null,
         timer: null,
+        lastSpyReveal: null,
+        voteCall: null,
         vote: { candidates: [], votedIds: [] },
         caughtInfo: null,
         roundEnd: null,
@@ -48,11 +54,26 @@ function reducer(state, message) {
     case "role_reveal":
       return { ...state, screen: "role", role: message.role, location: message.location ?? null };
     case "timer_start":
-      return { ...state, timer: { duration: message.duration, startedAt: message.started_at } };
+      return {
+        ...state,
+        timer: { duration: message.duration, startedAt: message.started_at },
+        spyCount: message.spy_count,
+      };
+    case "vote_call_started":
+      return {
+        ...state,
+        screen: "vote_call",
+        voteCall: { callerId: message.caller_id, callerName: message.caller_name, responses: message.responses },
+      };
+    case "vote_call_update":
+      return { ...state, voteCall: { ...state.voteCall, responses: message.responses } };
+    case "vote_call_cancelled":
+      return { ...state, screen: "timer", voteCall: null };
     case "vote_started":
       return {
         ...state,
         screen: "voting",
+        voteCall: null,
         vote: { candidates: message.candidates, votedIds: [] },
         caughtInfo: null,
         roundEnd: null,
@@ -66,6 +87,17 @@ function reducer(state, message) {
       };
     case "vote_failed":
       return { ...state, screen: "timer", vote: { candidates: [], votedIds: [] }, caughtInfo: null };
+    case "spy_revealed_round_continues":
+      return {
+        ...state,
+        screen: "timer",
+        vote: { candidates: [], votedIds: [] },
+        caughtInfo: null,
+        lastSpyReveal: {
+          name: message.revealed_player_name,
+          remaining: message.remaining_spy_count,
+        },
+      };
     case "round_end":
       return {
         ...state,
@@ -73,8 +105,8 @@ function reducer(state, message) {
         roundEnd: {
           winner: message.winner,
           reason: message.reason,
-          spyId: message.spy_id,
-          spy_name: message.spy_name,
+          spyIds: message.spy_ids,
+          spy_names: message.spy_names,
           location: message.location,
         },
       };
@@ -82,6 +114,8 @@ function reducer(state, message) {
       return { ...state, errorMessage: message.message };
     case "LOCAL_ADVANCE_TO_TIMER":
       return { ...state, screen: "timer" };
+    case "LOCAL_DISMISS_SPY_REVEAL":
+      return { ...state, lastSpyReveal: null };
     default:
       return state;
   }
@@ -99,8 +133,17 @@ export default function App() {
     (name, roomCode) => sendMessage({ type: "join_room", room_code: roomCode, name }),
     [sendMessage]
   );
-  const onStartRound = useCallback(() => sendMessage({ type: "start_round" }), [sendMessage]);
+  const onStartRound = useCallback(
+    (durationMinutes, spyCount) =>
+      sendMessage({ type: "start_round", duration_minutes: durationMinutes, spy_count: spyCount }),
+    [sendMessage]
+  );
   const onCallVote = useCallback(() => sendMessage({ type: "call_vote" }), [sendMessage]);
+  const onRespondVoteCall = useCallback(
+    (agree) => sendMessage({ type: "respond_vote_call", agree }),
+    [sendMessage]
+  );
+  const onCancelVoteCall = useCallback(() => sendMessage({ type: "cancel_vote_call" }), [sendMessage]);
   const onCastVote = useCallback(
     (targetId) => sendMessage({ type: "cast_vote", target_id: targetId }),
     [sendMessage]
@@ -109,8 +152,10 @@ export default function App() {
     (location) => sendMessage({ type: "spy_guess", location }),
     [sendMessage]
   );
+  const onCancelRound = useCallback(() => sendMessage({ type: "cancel_round" }), [sendMessage]);
   const onNewRound = useCallback(() => sendMessage({ type: "new_round" }), [sendMessage]);
   const onReady = useCallback(() => dispatch({ type: "LOCAL_ADVANCE_TO_TIMER" }), []);
+  const onDismissSpyReveal = useCallback(() => dispatch({ type: "LOCAL_DISMISS_SPY_REVEAL" }), []);
 
   switch (state.screen) {
     case "lobby":
@@ -133,7 +178,23 @@ export default function App() {
           startedAt={state.timer?.startedAt ?? Date.now() / 1000}
           role={state.role}
           location={state.location}
+          spyCount={state.spyCount}
+          lastSpyReveal={state.lastSpyReveal}
+          onDismissSpyReveal={onDismissSpyReveal}
+          isHost={state.isHost}
           onCallVote={onCallVote}
+          onCancelRound={onCancelRound}
+        />
+      );
+    case "vote_call":
+      return (
+        <VoteCallScreen
+          callerName={state.voteCall?.callerName}
+          isCaller={state.selfId === state.voteCall?.callerId}
+          hasResponded={Object.prototype.hasOwnProperty.call(state.voteCall?.responses ?? {}, state.selfId)}
+          onAgree={() => onRespondVoteCall(true)}
+          onDisagree={() => onRespondVoteCall(false)}
+          onCancel={onCancelVoteCall}
         />
       );
     case "voting":
@@ -148,6 +209,7 @@ export default function App() {
           onCastVote={onCastVote}
           onSpyGuess={onSpyGuess}
           onNewRound={onNewRound}
+          onCancelRound={onCancelRound}
         />
       );
     case "join":

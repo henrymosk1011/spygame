@@ -31,10 +31,15 @@ LOCATIONS = [
 MIN_PLAYERS = 3
 
 
-def assign_spy_and_location(room: Room) -> None:
-    """Pick a random spy and location for the given room, mutating it in place."""
+def max_spies_for(player_count: int) -> int:
+    """Cap spies at a strict minority of the table, and never fewer than one."""
+    return max(1, (player_count - 1) // 2)
+
+
+def assign_spy_and_location(room: Room, spy_count: int) -> None:
+    """Pick `spy_count` random spies and a random location, mutating the room in place."""
     player_ids = list(room.players.keys())
-    room.spy_id = random.choice(player_ids)
+    room.spy_ids = random.sample(player_ids, k=min(spy_count, len(player_ids)))
     room.location = random.choice(LOCATIONS)
 
 
