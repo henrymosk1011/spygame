@@ -33,17 +33,17 @@ export default function LobbyScreen({ roomCode, players, selfId, isHost, onStart
 
   return (
     <div className="flex min-h-screen flex-col items-center gap-8 bg-slate-900 px-4 py-12 text-center">
-      <div>
-        <p className="text-sm uppercase tracking-wide text-slate-400">Room code</p>
-        <p className="text-5xl font-bold tracking-[0.3em] text-emerald-400">{roomCode}</p>
-        <p className="mt-2 text-slate-400">Share this code so others can join.</p>
-      </div>
-
       <div className="w-full max-w-sm">
         <h2 className="mb-2 text-left text-sm uppercase tracking-wide text-slate-400">
           Players ({players.length})
         </h2>
         <PlayerList players={players} selfId={selfId} />
+      </div>
+
+      <div>
+        <p className="text-sm uppercase tracking-wide text-slate-400">Room code</p>
+        <p className="text-5xl font-bold tracking-[0.3em] text-emerald-400">{roomCode}</p>
+        <p className="mt-2 text-slate-400">Share this code so others can join.</p>
       </div>
 
       {isHost ? (
