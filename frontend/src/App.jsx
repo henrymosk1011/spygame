@@ -1,4 +1,4 @@
-import { useCallback, useReducer } from "react";
+import { useCallback, useEffect, useReducer } from "react";
 import useWebSocket from "./hooks/useWebSocket.js";
 import JoinScreen from "./pages/JoinScreen.jsx";
 import LobbyScreen from "./pages/LobbyScreen.jsx";
@@ -124,6 +124,13 @@ function reducer(state, message) {
 export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { status, sendMessage } = useWebSocket(dispatch);
+
+  // On mobile, focusing the name/room-code inputs on the join screen scrolls the page down to
+  // keep the field above the keyboard. That scroll position otherwise persists after switching
+  // to a whole new screen, so the next screen can render starting mid-scroll.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [state.screen]);
 
   const onCreateRoom = useCallback(
     (name) => sendMessage({ type: "create_room", name }),

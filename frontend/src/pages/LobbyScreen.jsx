@@ -4,21 +4,31 @@ import PlayerList from "../components/PlayerList.jsx";
 const MIN_PLAYERS = 3; // must match MIN_PLAYERS in backend/app/game_logic.py
 const MIN_ROUND_MINUTES = 1; // must match MIN_ROUND_MINUTES in backend/app/main.py
 const MAX_ROUND_MINUTES = 30; // must match MAX_ROUND_MINUTES in backend/app/main.py
+const DEFAULT_ROUND_MINUTES = 8;
 
 function maxSpiesFor(playerCount) {
   // Must match max_spies_for() in backend/app/game_logic.py
   return Math.max(1, Math.floor((playerCount - 1) / 2));
 }
 
+function clamp(value, min, max, fallback) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || value === "") return fallback;
+  return Math.max(min, Math.min(max, Math.round(n)));
+}
+
 export default function LobbyScreen({ roomCode, players, selfId, isHost, onStartRound, errorMessage }) {
-  const [durationMinutes, setDurationMinutes] = useState(8);
-  const [spyCount, setSpyCount] = useState(1);
+  // Kept as raw text while typing (so clearing the field or typing a new number doesn't get
+  // fought by an immediate clamp/fallback on every keystroke); only clamped on blur and when
+  // the round actually starts.
+  const [durationText, setDurationText] = useState(String(DEFAULT_ROUND_MINUTES));
+  const [spyCountText, setSpyCountText] = useState("1");
 
   const canStart = isHost && players.length >= MIN_PLAYERS;
   const maxSpies = maxSpiesFor(players.length);
 
   useEffect(() => {
-    setSpyCount((current) => Math.min(current, maxSpies));
+    setSpyCountText((current) => String(clamp(current, 1, maxSpies, 1)));
   }, [maxSpies]);
 
   return (
@@ -43,15 +53,14 @@ export default function LobbyScreen({ roomCode, players, selfId, isHost, onStart
               <span className="text-sm text-slate-400">Round length (minutes)</span>
               <input
                 type="number"
+                inputMode="numeric"
                 min={MIN_ROUND_MINUTES}
                 max={MAX_ROUND_MINUTES}
-                value={durationMinutes}
-                onChange={(e) =>
-                  setDurationMinutes(
-                    Math.max(
-                      MIN_ROUND_MINUTES,
-                      Math.min(MAX_ROUND_MINUTES, Number(e.target.value) || MIN_ROUND_MINUTES)
-                    )
+                value={durationText}
+                onChange={(e) => setDurationText(e.target.value)}
+                onBlur={() =>
+                  setDurationText(
+                    String(clamp(durationText, MIN_ROUND_MINUTES, MAX_ROUND_MINUTES, DEFAULT_ROUND_MINUTES))
                   )
                 }
                 className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none focus:border-emerald-500"
@@ -60,16 +69,16 @@ export default function LobbyScreen({ roomCode, players, selfId, isHost, onStart
 
             <label className="block">
               <span className="text-sm text-slate-400">
-                Number of spies {maxSpies > 1 && `(max ${maxSpies})`}
+                Number of spies {maxSpies === 1 ? "(max 1 with this many players)" : `(max ${maxSpies})`}
               </span>
               <input
                 type="number"
+                inputMode="numeric"
                 min={1}
                 max={maxSpies}
-                value={spyCount}
-                onChange={(e) =>
-                  setSpyCount(Math.max(1, Math.min(maxSpies, Number(e.target.value) || 1)))
-                }
+                value={spyCountText}
+                onChange={(e) => setSpyCountText(e.target.value)}
+                onBlur={() => setSpyCountText(String(clamp(spyCountText, 1, maxSpies, 1)))}
                 className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none focus:border-emerald-500"
               />
             </label>
@@ -78,7 +87,12 @@ export default function LobbyScreen({ roomCode, players, selfId, isHost, onStart
           <button
             type="button"
             disabled={!canStart}
-            onClick={() => onStartRound(durationMinutes, spyCount)}
+            onClick={() =>
+              onStartRound(
+                clamp(durationText, MIN_ROUND_MINUTES, MAX_ROUND_MINUTES, DEFAULT_ROUND_MINUTES),
+                clamp(spyCountText, 1, maxSpies, 1)
+              )
+            }
             className="w-full rounded-lg bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Start round
