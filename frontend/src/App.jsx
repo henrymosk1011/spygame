@@ -126,10 +126,13 @@ export default function App() {
   const { status, sendMessage } = useWebSocket(dispatch);
 
   // On mobile, focusing a text input scrolls the page to keep it above the on-screen keyboard.
-  // That keyboard's close animation keeps resizing the visual viewport (and re-adjusting scroll)
-  // for a while after this screen has already mounted, so a one-shot scrollTo loses the race.
-  // The Visual Viewport API's resize event fires exactly when that's happening, so react to it
-  // directly instead of guessing a duration; a few timed fallbacks cover browsers without it.
+  // The *previous* screen's keyboard-close animation keeps resizing the visual viewport (and
+  // re-adjusting scroll) for a while after this screen has already mounted, so a one-shot
+  // scrollTo loses that race -- react to the Visual Viewport API's resize event directly
+  // instead of guessing a duration, with a few timed fallbacks for browsers without it. This
+  // only runs briefly after mount: it has to stop listening well before the user could focus a
+  // field on *this* screen (e.g. the lobby's round-length box), or it would fight the browser's
+  // own -- wanted -- scroll-to-keep-that-field-visible behavior.
   useEffect(() => {
     const resetScroll = () => window.scrollTo(0, 0);
     resetScroll();
@@ -140,9 +143,11 @@ export default function App() {
 
     const viewport = window.visualViewport;
     viewport?.addEventListener("resize", resetScroll);
+    const stopListening = setTimeout(() => viewport?.removeEventListener("resize", resetScroll), 1200);
 
     return () => {
       timeouts.forEach(clearTimeout);
+      clearTimeout(stopListening);
       viewport?.removeEventListener("resize", resetScroll);
     };
   }, [state.screen]);
