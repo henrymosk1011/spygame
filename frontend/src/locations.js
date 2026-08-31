@@ -43,7 +43,6 @@ export const LOCATIONS = [
   "Pharmacy",
   "Pillow",
   "Pilot",
-  "Pirate Ship",
   "Pizza",
   "Polar Bear",
   "Police Officer",
