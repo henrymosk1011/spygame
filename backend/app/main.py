@@ -26,9 +26,12 @@ Server -> client:
 import asyncio
 import time
 import uuid
+from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.game_logic import (
     MIN_PLAYERS,
@@ -284,3 +287,19 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                         room.host_id = new_host.id
                     await broadcast_lobby_update(room)
                 manager.remove_room_if_empty(code)
+
+
+# Serve the built frontend (frontend/dist) so a single deployed service can host both the
+# API/WebSocket and the UI on one public URL. Absent in local dev unless `npm run build` has
+# been run, so this is skipped entirely when the frontend is served separately by Vite.
+FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+
+if FRONTEND_DIST.is_dir():
+    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="frontend-assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str) -> FileResponse:
+        candidate = FRONTEND_DIST / full_path
+        if full_path and candidate.is_file():
+            return FileResponse(candidate)
+        return FileResponse(FRONTEND_DIST / "index.html")

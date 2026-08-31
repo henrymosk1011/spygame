@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const WS_URL = import.meta.env.VITE_WS_URL || `ws://${window.location.hostname}:8000/ws`;
+// In dev, the backend runs as a separate process on port 8000. In a production build served by
+// the backend itself (see backend/app/main.py), the WebSocket lives on the same origin as the page.
+const DEFAULT_WS_URL = import.meta.env.DEV
+  ? `ws://${window.location.hostname}:8000/ws`
+  : `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/ws`;
+
+const WS_URL = import.meta.env.VITE_WS_URL || DEFAULT_WS_URL;
 
 export default function useWebSocket(onMessage) {
   const [status, setStatus] = useState("connecting");

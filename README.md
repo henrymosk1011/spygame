@@ -53,12 +53,39 @@ cp frontend/.env.example frontend/.env
 # VITE_WS_URL=ws://192.168.1.23:8000/ws
 ```
 
-## Playing on multiple phones
+## Playing on multiple phones (same network, no deploy)
 
 1. Start the backend and frontend on one computer as above.
 2. Find that computer's LAN IP address (e.g. `192.168.1.23`).
 3. Set `VITE_WS_URL=ws://192.168.1.23:8000/ws` in `frontend/.env` and restart `npm run dev`.
 4. On each phone, open `http://192.168.1.23:5173` (same Wi-Fi network required).
+
+## Deploying publicly (one URL, no same-network requirement)
+
+The backend can serve the built frontend directly, so the whole game lives behind a single
+public URL with no extra hosting or configuration. This repo includes a `render.yaml`
+blueprint for [Render](https://render.com):
+
+1. On Render, choose **New > Blueprint** and point it at this repository. It reads
+   `render.yaml` and creates one free web service that:
+   - builds the frontend (`npm ci && npm run build` in `frontend/`)
+   - installs the backend (`pip install -r backend/requirements.txt`)
+   - runs `uvicorn app.main:app --host 0.0.0.0 --port $PORT --app-dir backend`
+2. Once it deploys, Render gives you a URL like `https://spygame.onrender.com`. Share that
+   with friends — no room-code-network requirement, no separate frontend host, no environment
+   variables to set. Each visitor's browser talks to the same-origin WebSocket automatically.
+
+To build and serve it the same way locally (e.g. to sanity-check before deploying):
+
+```bash
+cd frontend && npm install && npm run build && cd ..
+cd backend && source .venv/bin/activate && uvicorn app.main:app --port 8000
+# open http://localhost:8000 — the backend now serves the built frontend itself
+```
+
+Note: the free Render plan spins down after inactivity and takes ~30-60s to wake up on the
+next visit. Also see "Notes on the current implementation" below — since state is in memory,
+a Render restart or redeploy clears any in-progress rooms.
 
 ## Game flow
 
